@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kitapyurdu — Yeniden Tasarım</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #faf7f2;
+    --cream-dark: #f0e6d6;
+    --amber: #c96a2e;
+    --amber-light: #e8905a;
+    --amber-pale: #fdf0e6;
+    --brown-dark: #1c1510;
+    --brown-mid: #5c4a36;
+    --brown-light: #9c8470;
+    --border: #e2d4c0;
+    --white: #ffffff;
+    --serif: 'Playfair Display', Georgia, serif;
+    --sans: 'Lato', system-ui, sans-serif;
+  }
+  html, body, #root { height: 100%; }
+  body { background: var(--cream); color: var(--brown-dark); font-family: var(--sans); }
+  button { cursor: pointer; border: none; background: none; font-family: var(--sans); }
+  input { font-family: var(--sans); }
+  a { text-decoration: none; color: inherit; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ─── MOCK DATA ─── */
+const USER = {
+  name: "Ayşe Kaya",
+  avatar: "AK",
+  pastOrders: ["Suç ve Ceza", "Simyacı", "Sapiens", "Homo Deus", "Bülbülü Öldürmek"],
+  favorites: ["Kürk Mantolu Madonna", "Dönüşüm", "Beyaz Geceler", "Yüzyıllık Yalnızlık"],
+  genres: ["Klasik Edebiyat", "Felsefe", "Tarih", "Psikoloji"]
+};
+
+const BOOKS = [
+  { id: 1, title: "Yüzyıllık Yalnızlık", author: "Gabriel García Márquez", publisher: "Can Yayınları", price: 189.90, discount: 15, genre: "Klasik Edebiyat", pages: 432, year: 2023, rating: 4.9, reviews: 3842, color: "#7b5ea7", desc: "Buendía ailesinin yüz yıllık destansı hikâyesi; büyülü gerçekçiliğin şaheseri. Macondo'da geçen bu roman, yalnızlığın, sevginin ve tarihin döngüselliğini anlatır.", tags: ["Büyülü Gerçekçilik", "Latin Amerika", "Klasik"] },
+  { id: 2, title: "Kürk Mantolu Madonna", author: "Sabahattin Ali", publisher: "Yapı Kredi Yayınları", price: 85.00, discount: 0, genre: "Türk Edebiyatı", pages: 152, year: 2022, rating: 4.8, reviews: 12041, color: "#4a7c59", desc: "Sabahattin Ali'nin başyapıtı. Almanya'da geçen derin ve acı bir aşk hikâyesi.", tags: ["Türk Klasiği", "Aşk", "Melankoli"] },
+  { id: 3, title: "Sapiens", author: "Yuval Noah Harari", publisher: "Kolektif Kitap", price: 210.00, discount: 20, genre: "Tarih", pages: 560, year: 2023, rating: 4.7, reviews: 8921, color: "#c47c1a", desc: "İnsanlığın kısa tarihi. Homo sapiens nasıl dünyanın efendisi oldu?", tags: ["Tarih", "Antropoloji", "Bilim"] },
+  { id: 4, title: "Suç ve Ceza", author: "Fyodor Dostoyevski", publisher: "İş Bankası Kültür Yayınları", price: 145.00, discount: 10, genre: "Klasik Edebiyat", pages: 688, year: 2022, rating: 4.9, reviews: 9210, color: "#8b3a3a", desc: "Rus edebiyatının zirvesi. Bir cinayetin psikolojik yolculuğu.", tags: ["Rus Edebiyatı", "Psikoloji", "Felsefe"] },
+  { id: 5, title: "Dönüşüm", author: "Franz Kafka", publisher: "Can Yayınları", price: 75.00, discount: 0, genre: "Klasik Edebiyat", pages: 128, year: 2021, rating: 4.6, reviews: 5430, color: "#3a5c8b", desc: "Gregor Samsa bir sabah dev bir böceğe dönmüş olarak uyandı...", tags: ["Absürd", "Alman Edebiyatı", "Kısa"] },
+  { id: 6, title: "Simyacı", author: "Paulo Coelho", publisher: "Can Yayınları", price: 110.00, discount: 5, genre: "Roman", pages: 208, year: 2023, rating: 4.5, reviews: 15230, color: "#a07830", desc: "Kişisel efsanenin peşinde bir çobanın yolculuğu.", tags: ["Felsefi", "Maneviyat", "Macera"] },
+  { id: 7, title: "Homo Deus", author: "Yuval Noah Harari", publisher: "Kolektif Kitap", price: 215.00, discount: 20, genre: "Tarih", pages: 512, year: 2023, rating: 4.5, reviews: 4210, color: "#2a6e7c", desc: "İnsanlığın geleceği. Yapay zeka, biyoteknoloji ve tanrılık.", tags: ["Fütürizm", "Tarih", "Teknoloji"] },
+  { id: 8, title: "Şeker Portakalı", author: "José Mauro de Vasconcelos", publisher: "Literatür Yayınları", price: 95.00, discount: 0, genre: "Roman", pages: 248, year: 2022, rating: 4.8, reviews: 7650, color: "#c45c2a", desc: "Küçük Zezé'nin dünyası. Büyüyenleri ağlatan bir büyüme hikâyesi.", tags: ["Çocuk", "Duygu", "Klasik"] },
+  { id: 9, title: "Beyaz Geceler", author: "Fyodor Dostoyevski", publisher: "Türkiye İş Bankası", price: 65.00, discount: 0, genre: "Klasik Edebiyat", pages: 96, year: 2021, rating: 4.7, reviews: 3210, color: "#5a4a80", desc: "St. Petersburg'un beyaz gecelerinde bir aşk ve hayal kırıklığı.", tags: ["Kısa", "Romantik", "Rus Edebiyatı"] },
+  { id: 10, title: "İnce Memed", author: "Yaşar Kemal", publisher: "Yapı Kredi Yayınları", price: 165.00, discount: 10, genre: "Türk Edebiyatı", pages: 384, year: 2022, rating: 4.8, reviews: 4321, color: "#5c7a3e", desc: "Anadolu destanı. Zulmün altında ezilen bir köylünün başkaldırısı.", tags: ["Türk Klasiği", "Epik", "Toplum"] },
+  { id: 11, title: "Bülbülü Öldürmek", author: "Harper Lee", publisher: "Altın Kitaplar", price: 120.00, discount: 10, genre: "Klasik Edebiyat", pages: 384, year: 2022, rating: 4.8, reviews: 6780, color: "#7a5c3a", desc: "Amerikan güneyinde adalet, ırk ve masumiyet üzerine.", tags: ["Hukuk", "Toplum", "Klasik"] },
+  { id: 12, title: "Fareler ve İnsanlar", author: "John Steinbeck", publisher: "Can Yayınları", price: 85.00, discount: 0, genre: "Klasik Edebiyat", pages: 112, year: 2021, rating: 4.6, reviews: 2980, color: "#6b4c2a", desc: "İki işçinin Amerika'da hayatta kalma mücadelesi.", tags: ["Kısa", "Toplum", "Dostluk"] },
+];
+
+const CATEGORIES = ["Tümü", "Klasik Edebiyat", "Türk Edebiyatı", "Roman", "Tarih", "Felsefe", "Psikoloji", "Bilim"];
+
+const CART_INIT = [
+  { ...BOOKS[0], qty: 1 },
+  { ...BOOKS[2], qty: 2 },
+];
+
+/* ─── HELPERS ─── */
+const finalPrice = (b) => b.price * (1 - b.discount / 100);
+const Stars = ({ n }) => (
+  <span style={{ color: "#c96a2e", fontSize: 13 }}>
+    {"★".repeat(Math.round(n))}{"☆".repeat(5 - Math.round(n))}
+    <span style={{ color: "#9c8470", marginLeft: 4, fontSize: 12 }}>{n.toFixed(1)}</span>
+  </span>
+);
+
+/* ─── BOOK COVER ─── */
+const BookCover = ({ book, width = 120, height = 170 }) => (
+  <div style={{
+    width, height, borderRadius: 4, background: book.color,
+    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
+    padding: "10px 8px", position: "relative", overflow: "hidden", flexShrink: 0,
+    boxShadow: "4px 6px 18px rgba(0,0,0,0.22)"
+  }}>
+    <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "linear-gradient(160deg,rgba(255,255,255,0.12) 0%,transparent 60%)" }} />
+    <div style={{ position: "absolute", top: 0, left: 8, bottom: 0, width: 4, background: "rgba(0,0,0,0.25)" }} />
+    <p style={{ fontFamily: "var(--serif)", fontWeight: 700, color: "#fff", fontSize: Math.max(9, 13 - book.title.length / 10), textAlign: "center", lineHeight: 1.3, textShadow: "0 1px 4px rgba(0,0,0,0.4)", zIndex: 1 }}>{book.title}</p>
+    <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 9, marginTop: 3, textAlign: "center", zIndex: 1 }}>{book.author}</p>
+  </div>
+);
+
+/* ─── TOPBAR ─── */
+const Topbar = ({ page, setPage, cart, searchQ, setSearchQ }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return (
+    <header style={{ background: "var(--white)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 12px rgba(28,21,16,0.06)" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", gap: 24, height: 68 }}>
+        {/* Logo */}
+        <button onClick={() => setPage("home")} style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <div style={{ width: 36, height: 36, background: "var(--amber)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ color: "#fff", fontFamily: "var(--serif)", fontWeight: 700, fontSize: 18 }}>K</span>
+          </div>
+          <div>
+            <div style={{ fontFamily: "var(--serif)", fontWeight: 700, fontSize: 18, color: "var(--brown-dark)", lineHeight: 1 }}>kitapyurdu</div>
+            <div style={{ fontSize: 9, color: "var(--brown-light)", letterSpacing: 1 }}>KİTAPLA BULUŞMANIN EN KOLAY YOLU</div>
+          </div>
+        </button>
+        {/* Search */}
+        <div style={{ flex: 1, position: "relative" }}>
+          <input
+            value={searchQ} onChange={e => { setSearchQ(e.target.value); if(e.target.value) setPage("search"); }}
+            placeholder="Kitap adı, yazar veya yayınevi ara..."
+            style={{ width: "100%", height: 42, border: "1.5px solid var(--border)", borderRadius: 8, padding: "0 44px 0 16px", fontSize: 14, background: "var(--cream)", outline: "none", color: "var(--brown-dark)", transition: "border-color 0.2s" }}
+            onFocus={e => e.target.style.borderColor = "var(--amber)"}
+            onBlur={e => e.target.style.borderColor = "var(--border)"}
+          />
+          <button onClick={() => searchQ && setPage("search")} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "var(--amber)" }}>
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          </button>
+        </div>
+        {/* Nav */}
+        <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          {[["search","Keşfet"], ["discover","✦ AI Keşfet"], ["profile","Hesabım"]].map(([p, label]) => (
+            <button key={p} onClick={() => setPage(p)} style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: p === "discover" ? 700 : 400, color: p === "discover" ? "var(--amber)" : page === p ? "var(--amber)" : "var(--brown-mid)", background: page === p ? "var(--amber-pale)" : "transparent", transition: "all 0.2s", border: p === "discover" ? "1.5px solid var(--amber)" : "none" }}>{label}</button>
+          ))}
+          <button onClick={() => setPage("cart")} style={{ position: "relative", padding: "8px 14px", borderRadius: 8, color: page === "cart" ? "var(--amber)" : "var(--brown-mid)" }}>
+            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            {cart.length > 0 && <span style={{ position: "absolute", top: 4, right: 8, background: "var(--amber)", color: "#fff", borderRadius: "50%", width: 18, height: 18, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>{cart.reduce((a,b)=>a+b.qty,0)}</span>}
+          </button>
+        </nav>
+      </div>
+      {/* Sub nav */}
+      <div style={{ background: "var(--amber-pale)", borderTop: "1px solid var(--border)" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", gap: 0, overflowX: "auto" }}>
+          {["Kitap", "Dergi", "Hobi & Oyuncak", "Kırtasiye", "Çok Satanlar", "Yeni Çıkanlar", "Yazarlar", "Yayınevleri"].map(c => (
+            <button key={c} onClick={() => setPage("search")} style={{ padding: "9px 16px", fontSize: 12.5, fontWeight: 400, color: "var(--brown-mid)", whiteSpace: "nowrap", borderBottom: "2px solid transparent", transition: "all 0.2s" }}
+              onMouseEnter={e => { e.target.style.color = "var(--amber)"; e.target.style.borderBottomColor = "var(--amber)"; }}
+              onMouseLeave={e => { e.target.style.color = "var(--brown-mid)"; e.target.style.borderBottomColor = "transparent"; }}
+            >{c}</button>
+          ))}
+        </div>
+      </div>
+    </header>
+  );
+};
+
+/* ─── HOME ─── */
+const Home = ({ setPage, setDetailBook, addToCart }) => {
+  const [heroIdx, setHeroIdx] = useState(0);
+  const heroes = [
+    { title: "Yeni Sezon Editoryal Seçkisi", sub: "Baharın ruhunu yansıtan 25 kitap — editörlerimizin özenle derlediği liste.", cta: "Seçkiyi Gör", color: "#4a6741" },
+    { title: "Klasikler Her Zaman Güncel", sub: "Dünya edebiyatının vazgeçilmez başyapıtları yeni baskılarıyla.", cta: "Keşfet", color: "#5c4a36" },
+    { title: "✦ Yapay Zekâ ile Kitap Bul", sub: "Okuma geçmişinize bakarak size özel kitap önerisi alın.", cta: "AI Keşfetmeye Başla", color: "#7b5ea7", aiPage: true },
+  ];
+  useEffect(() => {
+    const t = setInterval(() => setHeroIdx(i => (i + 1) % heroes.length), 5000);
+    return () => clearInterval(t);
+  }, []);
+  const h = heroes[heroIdx];
+  return (
+    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 64px" }}>
+      {/* Hero */}
+      <div style={{ borderRadius: 16, overflow: "hidden", height: 340, background: h.color, position: "relative", marginBottom: 48, cursor: "pointer" }}
+        onClick={() => h.aiPage ? setPage("discover") : setPage("search")}>
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 60%, transparent 100%)", zIndex: 1 }} />
+        {/* Decorative books */}
+        <div style={{ position: "absolute", right: 60, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 12, zIndex: 0 }}>
+          {[BOOKS[0], BOOKS[1], BOOKS[3]].map((b, i) => <div key={b.id} style={{ transform: `rotate(${[-8,0,8][i]}deg) translateY(${[10,0,10][i]}px)`, transition: "all 0.5s" }}><BookCover book={b} width={90} height={130} /></div>)}
+        </div>
+        <div style={{ position: "absolute", left: 48, top: "50%", transform: "translateY(-50%)", zIndex: 2, maxWidth: 420 }}>
+          <h1 style={{ fontFamily: "var(--serif)", fontSize: 34, fontWeight: 700, color: "#fff", lineHeight: 1.25, marginBottom: 12, textShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>{h.title}</h1>
+          <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 15, lineHeight: 1.6, marginBottom: 24 }}>{h.sub}</p>
+          <button style={{ background: "#fff", color: h.color, borderRadius: 8, padding: "12px 28px", fontWeight: 700, fontSize: 14, transition: "transform 0.2s" }}
+            onMouseEnter={e => e.target.style.transform = "scale(1.03)"}
+            onMouseLeave={e => e.target.style.transform = "scale(1)"}
+          >{h.cta}</button>
+        </div>
+        <div style={{ position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, zIndex: 2 }}>
+          {heroes.map((_, i) => <div key={i} style={{ width: i === heroIdx ? 24 : 8, height: 8, borderRadius: 4, background: i === heroIdx ? "#fff" : "rgba(255,255,255,0.4)", transition: "all 0.4s", cursor: "pointer" }} onClick={e => { e.stopPropagation(); setHeroIdx(i); }} />)}
+        </div>
+      </div>
+
+      {/* AI Teaser */}
+      <div onClick={() => setPage("discover")} style={{ background: "linear-gradient(135deg, #2c1f3e 0%, #4a3260 100%)", borderRadius: 12, padding: "20px 28px", marginBottom: 48, display: "flex", alignItems: "center", gap: 20, cursor: "pointer", transition: "transform 0.2s" }}
+        onMouseEnter={e => e.currentTarget.style.transform = "scale(1.005)"}
+        onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+      >
+        <div style={{ width: 48, height: 48, background: "rgba(255,255,255,0.1)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>✦</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: "#c9a8e8", fontSize: 11, fontWeight: 700, letterSpacing: 1.5, marginBottom: 4 }}>YENİ ÖZELLİK</div>
+          <div style={{ color: "#fff", fontFamily: "var(--serif)", fontSize: 18, fontWeight: 600 }}>AI ile Kişisel Kitap Keşfi</div>
+          <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 13, marginTop: 2 }}>Okuma geçmişiniz ve favorilerinize göre, her kitabın sizinle ne kadar uyumlu olduğunu öğrenin.</div>
+        </div>
+        <div style={{ color: "#c9a8e8", fontSize: 20 }}>→</div>
+      </div>
+
+      {/* Best Sellers */}
+      <Section title="En Çok Satanlar" link="Tümünü Gör" onLink={() => setPage("search")}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 24 }}>
+          {BOOKS.slice(0, 6).map(b => <BookCard key={b.id} book={b} setPage={setPage} setDetailBook={setDetailBook} addToCart={addToCart} />)}
+        </div>
+      </Section>
+
+      {/* New Releases */}
+      <Section title="Yeni Çıkanlar" link="Tümünü Gör" onLink={() => setPage("search")}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 24 }}>
+          {BOOKS.slice(6).map(b => <BookCard key={b.id} book={b} setPage={setPage} setDetailBook={setDetailBook} addToCart={addToCart} />)}
+        </div>
+      </Section>
+
+      {/* Categories */}
+      <Section title="Kategoriler">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          {[["Klasik Edebiyat","#8b3a3a"],["Türk Edebiyatı","#4a6741"],["Tarih & Seyahat","#c47c1a"],["Psikoloji","#5a4a80"],["Bilim","#2a6e7c"],["Felsefe","#5c4a36"],["Çocuk Kitapları","#c45c2a"],["Roman","#3a5c8b"]].map(([c,col]) => (
+            <button key={c} onClick={() => setPage("search")} style={{ background: col, borderRadius: 10, padding: "20px 16px", color: "#fff", textAlign: "left", fontFamily: "var(--serif)", fontSize: 15, fontWeight: 600, transition: "transform 0.2s, box-shadow 0.2s", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.18)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)"; }}
+            >{c}</button>
+          ))}
+        </div>
+      </Section>
+    </main>
+  );
+};
+
+const Section = ({ title, link, onLink, children }) => (
+  <section style={{ marginBottom: 52 }}>
+    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 20, borderBottom: "2px solid var(--border)", paddingBottom: 12 }}>
+      <h2 style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 700, color: "var(--brown-dark)" }}>{title}</h2>
+      {link && <button onClick={onLink} style={{ fontSize: 13, color: "var(--amber)", fontWeight: 700 }}>{link} →</button>}
+    </div>
+    {children}
+  </section>
+);
+
+const BookCard = ({ book, setPage, setDetailBook, addToCart }) => {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ display: "flex", flexDirection: "column", cursor: "pointer" }}>
+      <div onClick={() => { setDetailBook(book); setPage("detail"); }} style={{ transform: hov ? "translateY(-4px)" : "none", transition: "transform 0.25s" }}>
+        <BookCover book={book} width="100%" height={200} />
+        <div style={{ marginTop: 12 }}>
+          {book.discount > 0 && <span style={{ background: "var(--amber)", color: "#fff", fontSize: 10, padding: "2px 7px", borderRadius: 4, fontWeight: 700, marginBottom: 6, display: "inline-block" }}>%{book.discount} İNDİRİM</span>}
+          <p style={{ fontFamily: "var(--serif)", fontSize: 14, fontWeight: 600, color: "var(--brown-dark)", lineHeight: 1.35, marginBottom: 3 }}>{book.title}</p>
+          <p style={{ fontSize: 12, color: "var(--brown-light)", marginBottom: 5 }}>{book.author}</p>
+          <Stars n={book.rating} />
+          <div style={{ marginTop: 6, display: "flex", alignItems: "baseline", gap: 6 }}>
+            <span style={{ fontWeight: 700, fontSize: 15, color: "var(--amber)" }}>{finalPrice(book).toFixed(2)} ₺</span>
+            {book.discount > 0 && <span style={{ fontSize: 12, color: "var(--brown-light)", textDecoration: "line-through" }}>{book.price.toFixed(2)} ₺</span>}
+          </div>
+        </div>
+      </div>
+      <button onClick={() => addToCart(book)} style={{ marginTop: 10, background: hov ? "var(--amber)" : "var(--cream-dark)", color: hov ? "#fff" : "var(--brown-mid)", border: "none", borderRadius: 8, padding: "9px 0", fontSize: 12, fontWeight: 700, transition: "all 0.2s", width: "100%" }}>
+        {hov ? "Sepete Ekle" : "+ Sepet"}
+      </button>
+    </div>
+  );
+};
+
+/* ─── SEARCH PAGE ─── */
+const SearchPage = ({ setPage, setDetailBook, addToCart, searchQ }) => {
+  const [cat, setCat] = useState("Tümü");
+  const [sort, setSort] = useState("Popülerlik");
+  const filtered = BOOKS.filter(b => {
+    const q = searchQ.toLowerCase();
+    const matchQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q);
+    const matchCat = cat === "Tümü" || b.genre === cat;
+    return matchQ && matchCat;
+  });
+  return (
+    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 64px", display: "grid", gridTemplateColumns: "220px 1fr", gap: 32 }}>
+      {/* Sidebar */}
+      <aside>
+        <div style={{ background: "var(--white)", borderRadius: 12, padding: 20, border: "1px solid var(--border)" }}>
+          <h3 style={{ fontFamily: "var(--serif)", fontSize: 16, fontWeight: 700, marginBottom: 16, color: "var(--brown-dark)" }}>Kategori</h3>
+          {CATEGORIES.map(c => (
+            <button key={c} onClick={() => setCat(c)} style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 10px", borderRadius: 7, fontSize: 13, color: cat === c ? "var(--amber)" : "var(--brown-mid)", background: cat === c ? "var(--amber-pale)" : "transparent", fontWeight: cat === c ? 700 : 400, marginBottom: 2, transition: "all 0.15s" }}>{c}</button>
+          ))}
+          <div style={{ borderTop: "1px solid var(--border)", marginTop: 16, paddingTop: 16 }}>
+            <h3 style={{ fontFamily: "var(--serif)", fontSize: 16, fontWeight: 700, marginBottom: 12, color: "var(--brown-dark)" }}>Fiyat Aralığı</h3>
+            {["0–100 ₺", "100–200 ₺", "200+ ₺"].map(r => (
+              <label key={r} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--brown-mid)", marginBottom: 8, cursor: "pointer" }}>
+                <input type="checkbox" style={{ accentColor: "var(--amber)" }} />{r}
+              </label>
+            ))}
+          </div>
+        </div>
+      </aside>
+      {/* Results */}
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <p style={{ color: "var(--brown-mid)", fontSize: 14 }}><b style={{ color: "var(--brown-dark)" }}>{filtered.length}</b> kitap bulundu {searchQ && `"${searchQ}" için`}</p>
+          <select value={sort} onChange={e => setSort(e.target.value)} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "7px 12px", fontSize: 13, color: "var(--brown-mid)", background: "var(--white)", cursor: "pointer" }}>
+            {["Popülerlik", "Fiyat (Düşük)", "Fiyat (Yüksek)", "Yeni Çıkanlar", "Puana Göre"].map(s => <option key={s}>{s}</option>)}
+          </select>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: 24 }}>
+          {filtered.map(b => <BookCard key={b.id} book={b} setPage={setPage} setDetailBook={setDetailBook} addToCart={addToCart} />)}
+        </div>
+      </div>
+    </main>
+  );
+};
+
+/* ─── AI CARD ─── */
+const AICompatCard = ({ book }) => {
+  const [status, setStatus] = useState("idle"); // idle | loading | done | error
+  const [result, setResult] = useState(null);
+  const analyze = async () => {
+    setStatus("loading");
+    try {
+      const prompt = `Sen sıcak, samimi ve kitapsever bir AI asistansın — adın Kira. Kullanıcının okuma profilini ve incelediği kitabı değerlendirip Türkçe, kısa ve samimi bir analiz yaz.
+
+Kullanıcı Profili:
+- Geçmiş siparişler: ${USER.pastOrders.join(", ")}
+- Favori kitaplar: ${USER.favorites.join(", ")}
+- Sevdiği türler: ${USER.genres.join(", ")}
+
+İncelenen Kitap: "${book.title}" — ${book.author}
+Açıklama: ${book.desc}
+Etiketler: ${book.tags.join(", ")}
+
+Şu formatta yanıt ver (JSON):
+{
+  "score": 1-10 arası uyum puanı,
+  "emoji": tek bir uygun emoji,
+  "headline": 8-12 kelimelik çekici başlık,
+  "reason": 2-3 cümle samimi yorum, neden okusun,
+  "link": geçmiş kitaplardan biriyle bağlantı kur
+}`;
+      const text = await window.claude.complete(prompt);
+      const json = JSON.parse(text.match(/\{[\s\S]*\}/)[0]);
+      setResult(json);
+      setStatus("done");
+    } catch (e) {
+      setStatus("error");
+    }
+  };
+  const scoreColor = result ? result.score >= 8 ? "#4a6741" : result.score >= 6 ? "#c96a2e" : "#8b3a3a" : "var(--amber)";
+  return (
+    <div style={{ background: "linear-gradient(135deg, #1e1528 0%, #2e2040 100%)", borderRadius: 14, padding: 24, color: "#fff" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        <span style={{ fontSize: 20 }}>✦</span>
+        <div>
+          <div style={{ fontSize: 11, color: "#c9a8e8", fontWeight: 700, letterSpacing: 1.2 }}>AI KİŞİSEL ANALİZ</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.9)", fontWeight: 600 }}>Sana Ne Kadar Uyar?</div>
+        </div>
+      </div>
+      {status === "idle" && (
+        <div>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.6, marginBottom: 16 }}>
+            Okuma geçmişin ve favorilerin analiz edilerek bu kitabın sana ne kadar uyduğu hesaplanacak.
+          </p>
+          <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12 }}>
+            <div style={{ color: "#c9a8e8", marginBottom: 4, fontWeight: 600 }}>Profilinden:</div>
+            <div style={{ color: "rgba(255,255,255,0.7)" }}>📚 {USER.pastOrders.slice(0,2).join(", ")}... okudu</div>
+            <div style={{ color: "rgba(255,255,255,0.7)" }}>❤️ {USER.favorites.slice(0,2).join(", ")} favoriledi</div>
+          </div>
+          <button onClick={analyze} style={{ width: "100%", background: "var(--amber)", color: "#fff", borderRadius: 9, padding: "12px 0", fontWeight: 700, fontSize: 14, transition: "opacity 0.2s" }}
+            onMouseEnter={e => e.target.style.opacity = "0.9"}
+            onMouseLeave={e => e.target.style.opacity = "1"}
+          >✦ Analiz Et</button>
+        </div>
+      )}
+      {status === "loading" && (
+        <div style={{ textAlign: "center", padding: "24px 0" }}>
+          <div style={{ fontSize: 28, marginBottom: 12, animation: "spin 1s linear infinite", display: "inline-block" }}>✦</div>
+          <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}>Profilin analiz ediliyor...</p>
+          <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+        </div>
+      )}
+      {status === "done" && result && (
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+            <span style={{ fontSize: 32 }}>{result.emoji}</span>
+            <div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>Uyum Puanı</div>
+              <div style={{ fontFamily: "var(--serif)", fontSize: 28, fontWeight: 700, color: scoreColor === "#4a6741" ? "#7ec870" : scoreColor === "#c96a2e" ? "var(--amber-light)" : "#e88080" }}>{result.score}/10</div>
+            </div>
+          </div>
+          <p style={{ fontFamily: "var(--serif)", fontSize: 16, fontWeight: 600, color: "#fff", marginBottom: 10, lineHeight: 1.4 }}>{result.headline}</p>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.78)", lineHeight: 1.65, marginBottom: 12 }}>{result.reason}</p>
+          {result.link && <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#c9a8e8", lineHeight: 1.5 }}>🔗 {result.link}</div>}
+          <button onClick={() => { setStatus("idle"); setResult(null); }} style={{ marginTop: 14, fontSize: 12, color: "rgba(255,255,255,0.5)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }}>Yenile</button>
+        </div>
+      )}
+      {status === "error" && (
+        <div style={{ textAlign: "center" }}>
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, marginBottom: 12 }}>Analiz yüklenemedi. Tekrar dene.</p>
+          <button onClick={() => setStatus("idle")} style={{ background: "var(--amber)", color: "#fff", borderRadius: 8, padding: "9px 20px", fontWeight: 700, fontSize: 13 }}>Tekrar Dene</button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─── BOOK DETAIL ─── */
+const BookDetail = ({ book, setPage, addToCart }) => {
+  const [qty, setQty] = useState(1);
+  const [tab, setTab] = useState("hakkinda");
+  if (!book) return <div style={{ padding: 64, textAlign: "center" }}>Kitap seçilmedi.</div>;
+  const fp = finalPrice(book);
+  return (
+    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 64px" }}>
+      <button onClick={() => setPage("home")} style={{ color: "var(--brown-light)", fontSize: 13, marginBottom: 24, display: "flex", alignItems: "center", gap: 6 }}>← Geri</button>
+      <div style={{ display: "grid", gridTemplateColumns: "260px 1fr 300px", gap: 40 }}>
+        {/* Cover */}
+        <div>
+          <BookCover book={book} width={220} height={310} />
+          <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+            <button style={{ flex: 1, padding: "9px 0", borderRadius: 8, border: "1.5px solid var(--border)", fontSize: 12, color: "var(--brown-mid)" }}>❤️ Favorile</button>
+            <button style={{ flex: 1, padding: "9px 0", borderRadius: 8, border: "1.5px solid var(--border)", fontSize: 12, color: "var(--brown-mid)" }}>📋 Listeye Ekle</button>
+          </div>
+        </div>
+        {/* Info */}
+        <div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+            {book.tags.map(t => <span key={t} style={{ background: "var(--cream-dark)", color: "var(--brown-mid)", fontSize: 11, padding: "4px 10px", borderRadius: 20, fontWeight: 600 }}>{t}</span>)}
+          </div>
+          <h1 style={{ fontFamily: "var(--serif)", fontSize: 28, fontWeight: 700, color: "var(--brown-dark)", lineHeight: 1.25, marginBottom: 6 }}>{book.title}</h1>
+          <p style={{ fontSize: 15, color: "var(--brown-mid)", marginBottom: 4 }}>{book.author}</p>
+          <p style={{ fontSize: 13, color: "var(--brown-light)", marginBottom: 12 }}>{book.publisher} · {book.year} · {book.pages} sayfa</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+            <Stars n={book.rating} />
+            <span style={{ fontSize: 13, color: "var(--brown-light)" }}>{book.reviews.toLocaleString()} değerlendirme</span>
+          </div>
+          {/* Tabs */}
+          <div style={{ borderBottom: "2px solid var(--border)", display: "flex", gap: 0, marginBottom: 20 }}>
+            {[["hakkinda","Hakkında"], ["yorumlar","Yorumlar"], ["yazar","Yazar"]].map(([k, l]) => (
+              <button key={k} onClick={() => setTab(k)} style={{ padding: "10px 20px", fontSize: 13, fontWeight: tab===k ? 700 : 400, color: tab===k ? "var(--amber)" : "var(--brown-mid)", borderBottom: tab===k ? "2px solid var(--amber)" : "2px solid transparent", marginBottom: -2, transition: "all 0.2s" }}>{l}</button>
+            ))}
+          </div>
+          {tab === "hakkinda" && <p style={{ fontSize: 14, lineHeight: 1.75, color: "var(--brown-mid)" }}>{book.desc} Bu eser, dünya edebiyatının en önemli yapıtlarından biri olarak kabul görmektedir. Okuduğunuzda hayatınıza dokunacak, zihinsel olarak zenginleşeceksiniz.</p>}
+          {tab === "yorumlar" && (
+            <div>
+              {[["Mehmet A.", 5, "Hayatımda okuduğum en iyi kitaplardan biri. Kesinlikle tavsiye ediyorum."],["Zeynep K.", 4, "Çok etkileyiciydi, özellikle karakterlerin psikolojik derinliği muhteşem."]].map(([n,r,c]) => (
+                <div key={n} style={{ padding: "14px 0", borderBottom: "1px solid var(--border)" }}>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 6 }}>
+                    <div style={{ width: 32, height: 32, background: "var(--amber-pale)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "var(--amber)" }}>{n[0]}</div>
+                    <div><div style={{ fontSize: 13, fontWeight: 600 }}>{n}</div><Stars n={r} /></div>
+                  </div>
+                  <p style={{ fontSize: 13, color: "var(--brown-mid)", lineHeight: 1.6 }}>{c}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {tab === "yazar" && <p style={{ fontSize: 14, lineHeight: 1.75, color: "var(--brown-mid)" }}><b>{book.author}</b>, dünya edebiyatının en önemli yazarlarından biridir. Eserleriyle milyonlarca okuyucuya ulaşmıştır.</p>}
+        </div>
+        {/* Sidebar */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Price box */}
+          <div style={{ background: "var(--white)", borderRadius: 14, padding: 20, border: "1px solid var(--border)", boxShadow: "0 4px 16px rgba(0,0,0,0.05)" }}>
+            {book.discount > 0 && <div style={{ background: "var(--amber)", color: "#fff", borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 700, marginBottom: 8, display: "inline-block" }}>%{book.discount} İNDİRİM</div>}
+            {book.discount > 0 && <div style={{ fontSize: 13, color: "var(--brown-light)", textDecoration: "line-through", marginBottom: 2 }}>{book.price.toFixed(2)} ₺</div>}
+            <div style={{ fontFamily: "var(--serif)", fontSize: 28, fontWeight: 700, color: "var(--amber)", marginBottom: 14 }}>{fp.toFixed(2)} ₺</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+              <button onClick={() => setQty(q => Math.max(1, q-1))} style={{ width: 32, height: 32, borderRadius: 8, border: "1.5px solid var(--border)", fontWeight: 700, fontSize: 16, color: "var(--brown-mid)" }}>−</button>
+              <span style={{ fontWeight: 700, fontSize: 16, minWidth: 24, textAlign: "center" }}>{qty}</span>
+              <button onClick={() => setQty(q => q+1)} style={{ width: 32, height: 32, borderRadius: 8, border: "1.5px solid var(--border)", fontWeight: 700, fontSize: 16, color: "var(--brown-mid)" }}>+</button>
+            </div>
+            <button onClick={() => addToCart(book, qty)} style={{ width: "100%", background: "var(--amber)", color: "#fff", borderRadius: 9, padding: "13px 0", fontWeight: 700, fontSize: 14, marginBottom: 8, transition: "opacity 0.2s" }}
+              onMouseEnter={e => e.target.style.opacity=".9"} onMouseLeave={e => e.target.style.opacity="1"}
+            >🛒 Sepete Ekle</button>
+            <button style={{ width: "100%", background: "var(--cream-dark)", color: "var(--brown-mid)", borderRadius: 9, padding: "11px 0", fontWeight: 700, fontSize: 13 }}>Hızlı Satın Al</button>
+            <p style={{ fontSize: 11, color: "var(--brown-light)", textAlign: "center", marginTop: 10 }}>✓ Ücretsiz kargo · ✓ 14 gün iade</p>
+          </div>
+          {/* AI Card */}
+          <AICompatCard book={book} />
+        </div>
+      </div>
+      {/* Related */}
+      <div style={{ marginTop: 48 }}>
+        <Section title="Benzer Kitaplar">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 24 }}>
+            {BOOKS.filter(b => b.id !== book.id).slice(0, 5).map(b => <BookCard key={b.id} book={b} setPage={setPage} setDetailBook={() => {}} addToCart={addToCart} />)}
+          </div>
+        </Section>
+      </div>
+    </main>
+  );
+};
+
+/* ─── DISCOVER (AI) PAGE ─── */
+const DiscoverPage = ({ setPage, setDetailBook }) => {
+  const [status, setStatus] = useState("idle");
+  const [recs, setRecs] = useState([]);
+  const analyze = async () => {
+    setStatus("loading");
+    try {
+      const prompt = `Sen sıcak, samimi bir AI kitap asistanısın (adın Kira). Kullanıcı profiline göre 4 kitap öner. Sadece JSON döndür.
+
+Kullanıcı:
+- Geçmiş siparişler: ${USER.pastOrders.join(", ")}
+- Favoriler: ${USER.favorites.join(", ")}
+- Sevdiği türler: ${USER.genres.join(", ")}
+
+Mevcut kitaplar arasından öner (sadece bu listeden seç): ${BOOKS.map(b => b.title).join(", ")}
+
+Format:
+[
+  {
+    "title": "kitap adı (listedeki gibi)",
+    "score": 1-10,
+    "emoji": "emoji",
+    "reason": "2 cümle, neden öneriyor, samimi ve kişisel"
+  }
+]`;
+      const text = await window.claude.complete(prompt);
+      const arr = JSON.parse(text.match(/\[[\s\S]*\]/)[0]);
+      const enriched = arr.map(r => ({ ...r, book: BOOKS.find(b => b.title.includes(r.title.split(" ")[0])) || BOOKS[Math.floor(Math.random()*BOOKS.length)] }));
+      setRecs(enriched);
+      setStatus("done");
+    } catch (e) {
+      setStatus("error");
+    }
+  };
+  return (
+    <main style={{ maxWidth: 860, margin: "0 auto", padding: "48px 24px 80px" }}>
+      <div style={{ textAlign: "center", marginBottom: 40 }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>✦</div>
+        <h1 style={{ fontFamily: "var(--serif)", fontSize: 34, fontWeight: 700, color: "var(--brown-dark)", marginBottom: 10 }}>Benim için Keşfet</h1>
+        <p style={{ fontSize: 15, color: "var(--brown-mid)", lineHeight: 1.7, maxWidth: 500, margin: "0 auto" }}>Okuma geçmişin ve favorilerine bakarak sana en uygun kitapları seçiyorum. Hazırsan başlayalım!</p>
+      </div>
+      {/* Profile summary */}
+      <div style={{ background: "var(--white)", borderRadius: 14, border: "1px solid var(--border)", padding: 24, marginBottom: 32, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--brown-light)", letterSpacing: 1, marginBottom: 8 }}>OKUDUKLARIN</div>
+          {USER.pastOrders.map(t => <div key={t} style={{ fontSize: 13, color: "var(--brown-mid)", padding: "5px 0", borderBottom: "1px solid var(--cream-dark)", display: "flex", alignItems: "center", gap: 6 }}><span style={{ color: "var(--amber)" }}>📚</span>{t}</div>)}
+        </div>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--brown-light)", letterSpacing: 1, marginBottom: 8 }}>FAVORİLERİN</div>
+          {USER.favorites.map(t => <div key={t} style={{ fontSize: 13, color: "var(--brown-mid)", padding: "5px 0", borderBottom: "1px solid var(--cream-dark)", display: "flex", alignItems: "center", gap: 6 }}><span style={{ color: "#c45c8b" }}>❤️</span>{t}</div>)}
+          <div style={{ marginTop: 12 }}>
+            {USER.genres.map(g => <span key={g} style={{ display: "inline-block", background: "var(--amber-pale)", color: "var(--amber)", fontSize: 11, padding: "3px 10px", borderRadius: 20, fontWeight: 600, marginRight: 6, marginBottom: 4 }}>{g}</span>)}
+          </div>
+        </div>
+      </div>
+      {status === "idle" && (
+        <div style={{ textAlign: "center" }}>
+          <button onClick={analyze} style={{ background: "linear-gradient(135deg, #2c1f3e 0%, #4a3260 100%)", color: "#fff", borderRadius: 12, padding: "16px 48px", fontWeight: 700, fontSize: 16, transition: "transform 0.2s, box-shadow 0.2s", boxShadow: "0 4px 20px rgba(44,31,62,0.3)" }}
+            onMouseEnter={e => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 8px 30px rgba(44,31,62,0.4)"; }}
+            onMouseLeave={e => { e.target.style.transform = "none"; e.target.style.boxShadow = "0 4px 20px rgba(44,31,62,0.3)"; }}
+          >✦ Kişisel Önerilerimi Göster</button>
+        </div>
+      )}
+      {status === "loading" && (
+        <div style={{ textAlign: "center", padding: "48px 0" }}>
+          <div style={{ fontSize: 40, marginBottom: 16, animation: "spin 1.5s linear infinite", display: "inline-block" }}>✦</div>
+          <p style={{ fontFamily: "var(--serif)", fontSize: 20, color: "var(--brown-dark)", marginBottom: 6 }}>Kira analiz ediyor...</p>
+          <p style={{ color: "var(--brown-light)", fontSize: 14 }}>Okuma geçmişin inceleniyor, en uygun kitaplar seçiliyor.</p>
+          <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+        </div>
+      )}
+      {status === "done" && recs.length > 0 && (
+        <div>
+          <p style={{ fontFamily: "var(--serif)", fontSize: 18, color: "var(--brown-dark)", marginBottom: 24, textAlign: "center" }}>Sana özel {recs.length} öneri hazır ✨</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {recs.map((r, i) => (
+              <div key={i} onClick={() => { setDetailBook(r.book); setPage("detail"); }} style={{ background: "var(--white)", borderRadius: 14, border: "1px solid var(--border)", padding: 20, display: "grid", gridTemplateColumns: "80px 1fr auto", gap: 20, alignItems: "center", cursor: "pointer", transition: "box-shadow 0.2s, transform 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 30px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}
+              >
+                <BookCover book={r.book} width={80} height={110} />
+                <div>
+                  <div style={{ fontFamily: "var(--serif)", fontSize: 17, fontWeight: 700, color: "var(--brown-dark)", marginBottom: 3 }}>{r.book.title}</div>
+                  <div style={{ fontSize: 13, color: "var(--brown-light)", marginBottom: 8 }}>{r.book.author}</div>
+                  <p style={{ fontSize: 13, color: "var(--brown-mid)", lineHeight: 1.65 }}>{r.emoji} {r.reason}</p>
+                </div>
+                <div style={{ textAlign: "center", minWidth: 64 }}>
+                  <div style={{ fontFamily: "var(--serif)", fontSize: 28, fontWeight: 700, color: r.score >= 8 ? "#4a7c59" : "var(--amber)" }}>{r.score}</div>
+                  <div style={{ fontSize: 10, color: "var(--brown-light)", fontWeight: 600 }}>/ 10 UYUM</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: "center", marginTop: 32 }}>
+            <button onClick={() => { setStatus("idle"); setRecs([]); }} style={{ color: "var(--amber)", fontWeight: 700, fontSize: 13, borderBottom: "1px solid var(--amber)" }}>Yeniden Analiz Et</button>
+          </div>
+        </div>
+      )}
+      {status === "error" && (
+        <div style={{ textAlign: "center" }}>
+          <p style={{ color: "var(--brown-mid)", marginBottom: 16 }}>Bir hata oluştu.</p>
+          <button onClick={() => setStatus("idle")} style={{ background: "var(--amber)", color: "#fff", borderRadius: 8, padding: "10px 24px", fontWeight: 700 }}>Tekrar Dene</button>
+        </div>
+      )}
+    </main>
+  );
+};
+
+/* ─── CART PAGE ─── */
+const CartPage = ({ cart, setCart, setPage }) => {
+  const [step, setStep] = useState("cart"); // cart | checkout | success
+  const total = cart.reduce((s, b) => s + finalPrice(b) * b.qty, 0);
+  const updateQty = (id, qty) => setCart(c => qty < 1 ? c.filter(b => b.id !== id) : c.map(b => b.id === id ? {...b, qty} : b));
+  if (step === "success") return (
+    <main style={{ maxWidth: 600, margin: "0 auto", padding: "80px 24px", textAlign: "center" }}>
+      <div style={{ fontSize: 64, marginBottom: 20 }}>🎉</div>
+      <h2 style={{ fontFamily: "var(--serif)", fontSize: 28, fontWeight: 700, color: "var(--brown-dark)", marginBottom: 12 }}>Siparişiniz Alındı!</h2>
+      <p style={{ color: "var(--brown-mid)", fontSize: 15, lineHeight: 1.7, marginBottom: 32 }}>Siparişiniz onaylandı ve kargoya verilmek üzere hazırlanıyor. Takip bilgisi e-posta adresinize gönderilecek.</p>
+      <button onClick={() => { setCart([]); setPage("home"); }} style={{ background: "var(--amber)", color: "#fff", borderRadius: 10, padding: "14px 36px", fontWeight: 700, fontSize: 15 }}>Ana Sayfaya Dön</button>
+    </main>
+  );
+  if (step === "checkout") return (
+    <main style={{ maxWidth: 800, margin: "0 auto", padding: "32px 24px 80px" }}>
+      <h2 style={{ fontFamily: "var(--serif)", fontSize: 24, fontWeight: 700, marginBottom: 28 }}>Ödeme Bilgileri</h2>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 32 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {[["Adı Soyadı","text","Ayşe Kaya"], ["E-posta","email","ayse@mail.com"], ["Adres","text","Bağcılar Mah. Lale Sk. No:12"]].map(([l, t, ph]) => (
+            <div key={l}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: "var(--brown-light)", letterSpacing: 0.5, display: "block", marginBottom: 6 }}>{l.toUpperCase()}</label>
+              <input type={t} defaultValue={ph} style={{ width: "100%", border: "1.5px solid var(--border)", borderRadius: 9, padding: "12px 14px", fontSize: 14, color: "var(--brown-dark)", background: "var(--white)", outline: "none" }} />
+            </div>
+          ))}
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 700, color: "var(--brown-light)", letterSpacing: 0.5, display: "block", marginBottom: 6 }}>KART NUMARASI</label>
+            <input placeholder="•••• •••• •••• ••••" style={{ width: "100%", border: "1.5px solid var(--border)", borderRadius: 9, padding: "12px 14px", fontSize: 14, background: "var(--white)", outline: "none" }} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, color: "var(--brown-light)", display: "block", marginBottom: 6 }}>SON KULLANIM</label>
+              <input placeholder="AA/YY" style={{ width: "100%", border: "1.5px solid var(--border)", borderRadius: 9, padding: "12px 14px", fontSize: 14, background: "var(--white)", outline: "none" }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, color: "var(--brown-light)", display: "block", marginBottom: 6 }}>CVV</label>
+              <input placeholder="•••" style={{ width: "100%", border: "1.5px solid var(--border)", borderRadius: 9, padding: "12px 14px", fontSize: 14, background: "var(--white)", outline: "none" }} />
+            </div>
+          </div>
+        </div>
+        <div style={{ background: "var(--white)", borderRadius: 14, padding: 20, border: "1px solid var(--border)", height: "fit-content" }}>
+          <h3 style={{ fontFamily: "var(--serif)", fontSize: 18, marginBottom: 16 }}>Özet</h3>
+          {cart.map(b => <div key={b.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "6px 0", borderBottom: "1px solid var(--cream-dark)", color: "var(--brown-mid)" }}><span>{b.title} x{b.qty}</span><span>{(finalPrice(b)*b.qty).toFixed(2)} ₺</span></div>)}
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "6px 0", color: "var(--brown-mid)" }}><span>Kargo</span><span style={{ color: "#4a7c59", fontWeight: 700 }}>Ücretsiz</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 16, padding: "12px 0 0", borderTop: "2px solid var(--border)", marginTop: 4 }}><span>Toplam</span><span style={{ color: "var(--amber)" }}>{total.toFixed(2)} ₺</span></div>
+          <button onClick={() => setStep("success")} style={{ width: "100%", background: "var(--amber)", color: "#fff", borderRadius: 9, padding: "14px 0", fontWeight: 700, fontSize: 14, marginTop: 16 }}>Ödemeyi Tamamla</button>
+        </div>
+      </div>
+    </main>
+  );
+  return (
+    <main style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px 80px" }}>
+      <h2 style={{ fontFamily: "var(--serif)", fontSize: 26, fontWeight: 700, marginBottom: 28 }}>Sepetim <span style={{ color: "var(--brown-light)", fontSize: 16, fontWeight: 400 }}>({cart.reduce((a,b)=>a+b.qty,0)} ürün)</span></h2>
+      {cart.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "64px 0" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🛒</div>
+          <p style={{ color: "var(--brown-mid)", fontSize: 16, marginBottom: 20 }}>Sepetiniz boş.</p>
+          <button onClick={() => setPage("home")} style={{ background: "var(--amber)", color: "#fff", borderRadius: 9, padding: "12px 28px", fontWeight: 700 }}>Alışverişe Başla</button>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 32 }}>
+          <div>
+            {cart.map(b => (
+              <div key={b.id} style={{ background: "var(--white)", borderRadius: 14, border: "1px solid var(--border)", padding: 20, display: "grid", gridTemplateColumns: "80px 1fr auto", gap: 16, marginBottom: 12, alignItems: "center" }}>
+                <BookCover book={b} width={80} height={110} />
+                <div>
+                  <p style={{ fontFamily: "var(--serif)", fontSize: 16, fontWeight: 600, marginBottom: 3 }}>{b.title}</p>
+                  <p style={{ fontSize: 13, color: "var(--brown-light)", marginBottom: 10 }}>{b.author}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <button onClick={() => updateQty(b.id, b.qty-1)} style={{ width: 28, height: 28, borderRadius: 6, border: "1.5px solid var(--border)", fontWeight: 700 }}>−</button>
+                    <span style={{ fontWeight: 700, fontSize: 14 }}>{b.qty}</span>
+                    <button onClick={() => updateQty(b.id, b.qty+1)} style={{ width: 28, height: 28, borderRadius: 6, border: "1.5px solid var(--border)", fontWeight: 700 }}>+</button>
+                    <button onClick={() => updateQty(b.id, 0)} style={{ fontSize: 12, color: "var(--brown-light)", marginLeft: 8, textDecoration: "underline" }}>Kaldır</button>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontWeight: 700, fontSize: 18, color: "var(--amber)" }}>{(finalPrice(b)*b.qty).toFixed(2)} ₺</div>
+                  {b.discount > 0 && <div style={{ fontSize: 11, color: "var(--brown-light)", textDecoration: "line-through" }}>{(b.price*b.qty).toFixed(2)} ₺</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ background: "var(--white)", borderRadius: 14, border: "1px solid var(--border)", padding: 22, height: "fit-content" }}>
+            <h3 style={{ fontFamily: "var(--serif)", fontSize: 20, marginBottom: 18 }}>Sipariş Özeti</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "var(--brown-mid)", marginBottom: 8 }}><span>Ara Toplam</span><span>{total.toFixed(2)} ₺</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#4a7c59", fontWeight: 700, marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid var(--border)" }}><span>Kargo</span><span>Ücretsiz</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 20, marginBottom: 20 }}><span>Toplam</span><span style={{ color: "var(--amber)" }}>{total.toFixed(2)} ₺</span></div>
+            <button onClick={() => setStep("checkout")} style={{ width: "100%", background: "var(--amber)", color: "#fff", borderRadius: 9, padding: "14px 0", fontWeight: 700, fontSize: 14, transition: "opacity 0.2s" }}
+              onMouseEnter={e => e.target.style.opacity=".9"} onMouseLeave={e => e.target.style.opacity="1"}
+            >Alışverişi Tamamla →</button>
+            <div style={{ fontSize: 11, color: "var(--brown-light)", textAlign: "center", marginTop: 12 }}>✓ 256-bit SSL şifreli ödeme</div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+};
+
+/* ─── PROFILE PAGE ─── */
+const ProfilePage = ({ setPage, setDetailBook }) => {
+  const [tab, setTab] = useState("siparisler");
+  const orders = [
+    { id: "#KY-2024-0192", date: "18 Nisan 2025", status: "Teslim Edildi", books: [BOOKS[0], BOOKS[2]], total: 389.80 },
+    { id: "#KY-2024-0141", date: "02 Nisan 2025", status: "Kargoda", books: [BOOKS[3]], total: 130.50 },
+    { id: "#KY-2024-0087", date: "12 Mart 2025", status: "Teslim Edildi", books: [BOOKS[5], BOOKS[7]], total: 195.00 },
+  ];
+  const statusColor = s => s === "Teslim Edildi" ? "#4a7c59" : s === "Kargoda" ? "#c96a2e" : "#5a4a80";
+  return (
+    <main style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px 80px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 36, background: "var(--white)", borderRadius: 16, padding: "24px 28px", border: "1px solid var(--border)" }}>
+        <div style={{ width: 64, height: 64, background: "var(--amber)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--serif)", fontSize: 24, fontWeight: 700, color: "#fff" }}>{USER.avatar}</div>
+        <div>
+          <h2 style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 700, color: "var(--brown-dark)" }}>{USER.name}</h2>
+          <p style={{ fontSize: 13, color: "var(--brown-light)", marginTop: 2 }}>Platin Üye · {USER.pastOrders.length} Sipariş</p>
+          <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+            {USER.genres.map(g => <span key={g} style={{ background: "var(--amber-pale)", color: "var(--amber)", fontSize: 10, padding: "2px 8px", borderRadius: 20, fontWeight: 700 }}>{g}</span>)}
+          </div>
+        </div>
+        <div style={{ marginLeft: "auto" }}>
+          <button onClick={() => setPage("discover")} style={{ background: "linear-gradient(135deg, #2c1f3e 0%, #4a3260 100%)", color: "#fff", borderRadius: 10, padding: "11px 20px", fontWeight: 700, fontSize: 13 }}>✦ AI Önerilerimi Gör</button>
+        </div>
+      </div>
+      {/* Tabs */}
+      <div style={{ borderBottom: "2px solid var(--border)", display: "flex", gap: 0, marginBottom: 28 }}>
+        {[["siparisler","Siparişlerim"], ["favoriler","Favorilerim"], ["listeler","Listelerim"]].map(([k,l]) => (
+          <button key={k} onClick={() => setTab(k)} style={{ padding: "11px 22px", fontSize: 14, fontWeight: tab===k ? 700 : 400, color: tab===k ? "var(--amber)" : "var(--brown-mid)", borderBottom: tab===k ? "2px solid var(--amber)" : "2px solid transparent", marginBottom: -2, transition: "all 0.2s" }}>{l}</button>
+        ))}
+      </div>
+      {tab === "siparisler" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {orders.map(o => (
+            <div key={o.id} style={{ background: "var(--white)", borderRadius: 14, border: "1px solid var(--border)", padding: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "var(--brown-dark)" }}>{o.id}</div>
+                  <div style={{ fontSize: 12, color: "var(--brown-light)", marginTop: 2 }}>{o.date}</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: statusColor(o.status) + "22", color: statusColor(o.status) }}>{o.status}</span>
+                  <span style={{ fontWeight: 700, color: "var(--amber)" }}>{o.total.toFixed(2)} ₺</span>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 12 }}>
+                {o.books.map(b => <div key={b.id} style={{ display: "flex", gap: 10, alignItems: "center", background: "var(--cream)", borderRadius: 8, padding: "8px 12px" }}>
+                  <BookCover book={b} width={36} height={50} />
+                  <div><div style={{ fontSize: 13, fontWeight: 600, color: "var(--brown-dark)" }}>{b.title}</div><div style={{ fontSize: 11, color: "var(--brown-light)" }}>{b.author}</div></div>
+                </div>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {tab === "favoriler" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 24 }}>
+          {BOOKS.filter(b => USER.favorites.includes(b.title)).map(b => (
+            <BookCard key={b.id} book={b} setPage={setPage} setDetailBook={setDetailBook} addToCart={() => {}} />
+          ))}
+        </div>
+      )}
+      {tab === "listeler" && (
+        <div style={{ textAlign: "center", padding: "48px 0", color: "var(--brown-light)" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+          <p>Henüz liste oluşturmadın.</p>
+        </div>
+      )}
+    </main>
+  );
+};
+
+/* ─── FOOTER ─── */
+const Footer = () => (
+  <footer style={{ background: "var(--brown-dark)", color: "rgba(255,255,255,0.6)", padding: "40px 24px 24px", marginTop: 0 }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 32, marginBottom: 32 }}>
+        <div>
+          <div style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 8 }}>kitapyurdu</div>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Türkiye'nin en köklü çevrimiçi kitapçısı. 1 milyondan fazla kitap, hızlı kargo.</p>
+        </div>
+        {[["Yardım",["SSS","İade","Kargo","İletişim"]], ["Keşfet",["Çok Satanlar","Yeni Çıkanlar","Yazarlar","Yayınevleri"]]].map(([t,ls]) => (
+          <div key={t}>
+            <div style={{ color: "#fff", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>{t}</div>
+            {ls.map(l => <div key={l} style={{ fontSize: 13, padding: "4px 0", cursor: "pointer" }}>{l}</div>)}
+          </div>
+        ))}
+        <div>
+          <div style={{ color: "#fff", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>İletişim</div>
+          <div style={{ fontSize: 13, lineHeight: 1.8 }}>0850 123 4567<br />destek@kitapyurdu.com<br />Hft içi 09:00–18:00</div>
+        </div>
+      </div>
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}>
+        <span>© 2025 Kitapyurdu. Tüm hakları saklıdır.</span>
+        <span>✦ AI özelliği tarafından desteklenmektedir</span>
+      </div>
+    </div>
+  </footer>
+);
+
+/* ─── APP ─── */
+const App = () => {
+  const [page, setPage] = useState("home");
+  const [detailBook, setDetailBook] = useState(null);
+  const [cart, setCart] = useState(CART_INIT);
+  const [searchQ, setSearchQ] = useState("");
+  const addToCart = (book, qty = 1) => setCart(c => {
+    const ex = c.find(b => b.id === book.id);
+    if (ex) return c.map(b => b.id === book.id ? {...b, qty: b.qty + qty} : b);
+    return [...c, {...book, qty}];
+  });
+  const setDetailAndPage = (book) => { setDetailBook(book); setPage("detail"); };
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <Topbar page={page} setPage={setPage} cart={cart} searchQ={searchQ} setSearchQ={setSearchQ} />
+      <div style={{ flex: 1 }}>
+        {page === "home" && <Home setPage={setPage} setDetailBook={setDetailAndPage} addToCart={addToCart} />}
+        {page === "search" && <SearchPage setPage={setPage} setDetailBook={setDetailAndPage} addToCart={addToCart} searchQ={searchQ} />}
+        {page === "detail" && <BookDetail book={detailBook} setPage={setPage} addToCart={addToCart} />}
+        {page === "discover" && <DiscoverPage setPage={setPage} setDetailBook={setDetailAndPage} />}
+        {page === "cart" && <CartPage cart={cart} setCart={setCart} setPage={setPage} />}
+        {page === "profile" && <ProfilePage setPage={setPage} setDetailBook={setDetailAndPage} />}
+      </div>
+      <Footer />
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
