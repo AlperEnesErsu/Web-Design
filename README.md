@@ -8,7 +8,3 @@ Bu repo icindeki her tasarim ayri bir proje klasoru olarak tutulur:
 Detaylar icin ilgili proje README dosyasina bakabilirsiniz:
 
 - `KitapYurdu-Redisgn/README.md`
-
-## Contributors
-
-- Claude
