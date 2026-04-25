@@ -1,10 +1,10 @@
 ## Web Design
 Bu repo, tasarimi daha iyi hale getirilebilecek web sitelerini yeniden ele alip daha modern, kullanisli ve guclu arayuzlerle gelistirmeyi amaclar.
 
-Bu klasor altinda her tasarim ayri bir proje olarak tutulur:
+Bu repo icindeki her tasarim ayri bir proje klasoru olarak tutulur:
 
-- `web-tasarimlari/kitapyurdu-redesign`: Kitapyurdu icin modern arayuz denemesi (React + Babel CDN)
+- `KitapYurdu-Redisgn`: Kitapyurdu icin modern arayuz denemesi (React + Babel CDN)
 
 Detaylar icin ilgili proje README dosyasina bakabilirsiniz:
 
-- `web-tasarimlari/kitapyurdu-redesign/README.md`
+- `KitapYurdu-Redisgn/README.md`
