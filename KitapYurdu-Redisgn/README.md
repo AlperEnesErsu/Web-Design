@@ -23,3 +23,7 @@ Proje tek dosya (index.html) uzerinden calisir ve React + Babel CDN kullandigi i
 ## Not
 
 Bu calisma bir redesign/prototip calismasidir; gercek backend baglantisi yoktur ve veriler mock olarak tutulur.
+
+## Contributors
+
+- Claude
